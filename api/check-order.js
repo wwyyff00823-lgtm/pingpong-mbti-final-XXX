@@ -1,5 +1,6 @@
 // 查询订单支付状态接口
 import crypto from 'crypto';
+import qs from 'querystring';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -21,12 +22,17 @@ export default async function handler(req, res) {
     console.log("【订单查询】请求参数", params);
 
     try {
+        const formData = qs.stringify(params);
         const queryRes = await fetch(QUERY_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(params)
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
         });
-        const data = await queryRes.json();
+        const text = await queryRes.text();
+        console.log("【订单查询】原始返回", text);
+        const data = JSON.parse(text);
         console.log("【订单查询】虎皮椒返回", data);
 
         if (data.return_code === "SUCCESS" && data.trade_status === "SUCCESS") {

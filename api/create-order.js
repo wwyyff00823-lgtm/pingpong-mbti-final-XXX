@@ -1,5 +1,6 @@
 // 虎皮椒V3微信支付 创建订单接口 Vercel服务端
 import crypto from 'crypto';
+import qs from 'querystring';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -38,12 +39,24 @@ export default async function handler(req, res) {
     console.log("【创建订单】计算签名sign：", sign);
 
     try {
+        // V3必须表单提交，不能JSON
+        const formData = qs.stringify(params);
         const payRes = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(params)
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
         });
-        const payData = await payRes.json();
+        const payDataText = await payRes.text();
+        console.log("【创建订单】虎皮椒原始返回文本", payDataText);
+        let payData;
+        try {
+            payData = JSON.parse(payDataText);
+        } catch (e) {
+            return res.status(200).json({ code: -2, msg: `接口非JSON返回：${payDataText}` });
+        }
+
         console.log("【创建订单】虎皮椒完整返回数据", payData);
 
         if (payData.return_code === "SUCCESS" && payData.pay_url) {
@@ -55,7 +68,7 @@ export default async function handler(req, res) {
         } else {
             return res.status(200).json({
                 code: -2,
-                msg: `虎皮椒返回错误：${payData.return_msg || "无错误提示"}`
+                msg: `虎皮椒返回错误：${payData.return_msg || "无错误提示"}，完整返回：${JSON.stringify(payData)}`
             });
         }
     } catch (err) {
