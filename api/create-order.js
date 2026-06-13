@@ -1,7 +1,7 @@
-import crypto from 'crypto';
-import qs from 'querystring';
+const crypto = require('crypto');
+const qs = require('querystring');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ code: -1, msg: "仅支持POST请求" });
     }
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
         return_url: `${protocol}://${domain}`
     };
 
-    // 签名算法
+    // 官方标准签名
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
             return res.json({ code: -99, msg: `接口非JSON返回：${raw}` });
         }
 
-        // 核心修正：V3用 errcode=0 代表成功，支付链接是 url 字段
+        // V3接口 errcode=0 代表成功，支付链接是 url
         if (ret.errcode === 0 && ret.url) {
             return res.json({
                 code: 0,
@@ -77,4 +77,4 @@ export default async function handler(req, res) {
     } catch (err) {
         return res.json({ code: -3, msg: `请求异常：${err.message}` });
     }
-}
+};

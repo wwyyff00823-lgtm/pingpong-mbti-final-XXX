@@ -1,6 +1,6 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     const APPSECRET = "685ed8bb1d5468e8771aaee1109913c4";
     const body = req.method === 'POST' ? req.body : req.query;
 
@@ -28,4 +28,4 @@ export default async function handler(req, res) {
     }
 
     res.send("success");
-}
+};

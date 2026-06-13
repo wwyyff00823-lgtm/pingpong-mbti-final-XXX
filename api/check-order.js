@@ -1,7 +1,7 @@
-import crypto from 'crypto';
-import qs from 'querystring';
+const crypto = require('crypto');
+const qs = require('querystring');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ code: -1, msg: "仅支持POST" });
     }
@@ -26,7 +26,6 @@ export default async function handler(req, res) {
         nonce_str: nonce_str
     };
 
-    // 签名算法和下单完全一致
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
@@ -53,12 +52,12 @@ export default async function handler(req, res) {
         const raw = await resp.text();
         const ret = JSON.parse(raw);
 
-        if (ret.return_code === "SUCCESS" && ret.trade_status === "SUCCESS") {
+        if (ret.errcode === 0 && ret.trade_status === "SUCCESS") {
             return res.json({ code: 0, paid: true });
         } else {
-            return res.json({ code: 0, paid: false, msg: ret.return_msg || "未支付" });
+            return res.json({ code: 0, paid: false, msg: ret.errmsg || "未支付" });
         }
     } catch (err) {
         return res.json({ code: -2, msg: `查询异常：${err.message}` });
     }
-}
+};
