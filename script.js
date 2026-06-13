@@ -2,7 +2,7 @@
 const PAY_CONFIG = {
     APPID: "201906181673", // 替换为你的虎皮椒商户APPID
     GOODS_NAME: "乒乓MBTI完整千字实战分析报告",
-    PRICE: "9.90",
+    PRICE: "0.90",
     // 支付成功后跳转回的页面地址，部署后替换成你的正式域名
     RETURN_URL: window.location.href.split('?')[0]
 };
@@ -1215,41 +1215,40 @@ closePayModalBtn.addEventListener("click", () => {
 });
 
 // ====================== 真实支付发起逻辑（前后端分离，密钥放后端） ======================
-// 前端仅传订单公开参数，签名校验、密钥、回调验证全部由后端处理
-// 对接后端支付接口时，取消下方注释，替换成你的后端订单接口地址即可
+// ====================== 真实支付发起逻辑（请求后端云函数创建订单） ======================
 submitPayBtn.addEventListener("click", async () => {
     const orderNo = generateOrderNo();
-    const orderParams = {
-        appid: PAY_CONFIG.APPID,
-        goods_name: PAY_CONFIG.GOODS_NAME,
-        price: PAY_CONFIG.PRICE,
-        order_no: orderNo,
-        return_url: PAY_CONFIG.RETURN_URL
-    };
+    const originalText = submitPayBtn.textContent;
+    submitPayBtn.disabled = true;
+    submitPayBtn.textContent = "正在创建订单...";
 
     try {
-        // ========== 真实生产环境：请求后端创建订单 ==========
-        // const res = await fetch("/api/pingpong/create-order", {
-        //     method: "POST",
-        //     headers: { "Content-Type": "application/json" },
-        //     body: JSON.stringify(orderParams)
-        // });
-        // const data = await res.json();
-        // if (data.code === 0 && data.pay_url) {
-        //     window.location.href = data.pay_url;
-        // } else {
-        //     alert("订单创建失败：" + (data.msg || "请稍后重试"));
-        // }
-
-        // ========== 未对接后端时的占位提示，绝对不会自动解锁 ==========
-        alert("支付系统正在对接中，暂未开放在线支付，敬请期待");
-        payModal.classList.remove("show");
+        const res = await fetch("/api/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                order_no: orderNo,
+                price: PAY_CONFIG.PRICE,
+                goods_name: PAY_CONFIG.GOODS_NAME
+            })
+        });
+        const data = await res.json();
+        
+        if (data.code === 0 && data.pay_url) {
+            // 跳转到微信支付页面
+            window.location.href = data.pay_url;
+        } else {
+            alert("订单创建失败：" + (data.msg || "请稍后重试"));
+        }
     } catch (err) {
         alert("网络异常，请检查网络后重试");
+    } finally {
+        submitPayBtn.disabled = false;
+        submitPayBtn.textContent = originalText;
     }
 });
 
-// ====================== 支付成功解锁函数（后端回调验证通过后调用） ======================
+// ====================== 支付成功解锁函数（后端验证通过后调用） ======================
 function unlockFullReport() {
     localStorage.setItem("pingpong_mbti_unlocked", "1");
     isReportUnlocked = true;
@@ -1275,15 +1274,35 @@ restartAllTestBtn.addEventListener("click", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-// ====================== 页面加载初始化 ======================
-window.addEventListener("DOMContentLoaded", () => {
-    // 自动识别支付成功回调：支付完成跳转回来时，URL带pay_success=1则自动解锁
+// ====================== 页面加载初始化（支付回调自动解锁） ======================
+window.addEventListener("DOMContentLoaded", async () => {
+    // 读取URL中的订单号（虎皮椒支付成功跳转带回）
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("pay_success") === "1") {
-        unlockFullReport();
+    const orderNo = urlParams.get("out_trade_no");
+
+    // 如果有订单号，且当前未解锁，则查询订单状态
+    if (orderNo && !isReportUnlocked) {
+        try {
+            const res = await fetch("/api/check-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_no: orderNo })
+            });
+            const data = await res.json();
+            
+            if (data.paid === true) {
+                // 支付验证通过，永久解锁本设备
+                unlockFullReport();
+                // 清除URL参数，避免刷新重复查询
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (err) {
+            console.log("订单查询失败", err);
+        }
     }
 
     if (isReportUnlocked) {
-        console.log("当前设备已永久解锁完整报告");
+        console.log("该设备已永久解锁完整报告");
+        fullReportWrap.style.display = "block";
     }
 });
