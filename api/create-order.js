@@ -17,31 +17,42 @@ export default async function handler(req, res) {
 
     const total_fee = Math.round(Number(price) * 100);
     const time = Math.floor(Date.now() / 1000);
+    const nonce_str = crypto.randomBytes(8).toString('hex'); // 必填随机串
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const domain = req.headers.host;
 
-    // 固定参数顺序，官方要求按ASCII升序
+    // 所有业务参数
     const params = {
         appid: APPID,
+        time: time,
+        nonce_str: nonce_str,
+        out_trade_no: order_no,
+        total_fee: total_fee,
         body: goods_name,
         notify_url: `${protocol}://${domain}/api/notify`,
-        out_trade_no: order_no,
         return_url: `${protocol}://${domain}`,
-        time: time,
-        total_fee: total_fee,
         type: "WAP"
     };
 
-    // 官方签名算法
-    let signStr = '';
+    // ========== 官方标准签名算法 ==========
+    // 1. 按ASCII排序，过滤空值，排除hash
     const keys = Object.keys(params).sort();
-    for (const k of keys) {
-        signStr += `${k}=${params[k]}&`;
-    }
-    signStr += `key=${APPSECRET}`;
-    const hash = crypto.createHash('md5').update(signStr).digest('hex').toUpperCase();
+    let signStr = '';
+    keys.forEach(key => {
+        const value = params[key];
+        if (value !== '' && value !== undefined && value !== null && key !== 'hash') {
+            signStr += `${key}=${value}&`;
+        }
+    });
+    // 去掉末尾最后一个&
+    signStr = signStr.slice(0, -1);
+    // 2. 直接拼接密钥（没有&、没有key=！！核心修正点）
+    signStr += APPSECRET;
+    // 3. MD5小写
+    const hash = crypto.createHash('md5').update(signStr).digest('hex').toLowerCase();
     params.hash = hash;
 
+    // 表单提交
     const postData = qs.stringify(params);
 
     try {
@@ -57,13 +68,13 @@ export default async function handler(req, res) {
         try {
             ret = JSON.parse(raw);
         } catch (e) {
-            return res.json({ code: -99, msg: `接口返回非JSON：${raw}` });
+            return res.json({ code: -99, msg: `接口非JSON返回：${raw}` });
         }
 
         if (ret.return_code === 'SUCCESS' && ret.pay_url) {
-            return res.json({ code: 0, pay_url: ret.pay_url });
+            return res.json({ code: 0, pay_url: ret.pay_url, order_no });
         } else {
-            return res.json({ code: -2, msg: JSON.stringify(ret) });
+            return res.json({ code: -2, msg: `接口报错：${JSON.stringify(ret)}` });
         }
     } catch (err) {
         return res.json({ code: -3, msg: `请求异常：${err.message}` });
