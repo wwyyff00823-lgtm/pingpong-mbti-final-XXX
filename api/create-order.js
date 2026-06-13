@@ -20,20 +20,19 @@ export default async function handler(req, res) {
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const domain = req.headers.host;
 
-    // 严格按官方文档的必填参数
     const params = {
-        version: "1.1",          // 必填，固定值
-        appid: APPID,            // 必填
-        trade_order_id: order_no,// 必填，商户订单号（之前参数名写错了）
-        total_fee: price,        // 必填，单位：元！！不是分
-        title: goods_name,       // 必填，订单标题（之前参数名写错了）
-        time: time,              // 必填
-        nonce_str: nonce_str,    // 必填
+        version: "1.1",
+        appid: APPID,
+        trade_order_id: order_no,
+        total_fee: price,
+        title: goods_name,
+        time: time,
+        nonce_str: nonce_str,
         notify_url: `${protocol}://${domain}/api/notify`,
         return_url: `${protocol}://${domain}`
     };
 
-    // 官方标准签名算法
+    // 签名算法
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
@@ -65,8 +64,13 @@ export default async function handler(req, res) {
             return res.json({ code: -99, msg: `接口非JSON返回：${raw}` });
         }
 
-        if (ret.return_code === 'SUCCESS' && ret.pay_url) {
-            return res.json({ code: 0, pay_url: ret.pay_url, order_no });
+        // 核心修正：V3用 errcode=0 代表成功，支付链接是 url 字段
+        if (ret.errcode === 0 && ret.url) {
+            return res.json({
+                code: 0,
+                pay_url: ret.url,
+                order_no: order_no
+            });
         } else {
             return res.json({ code: -2, msg: `接口报错：${JSON.stringify(ret)}` });
         }
