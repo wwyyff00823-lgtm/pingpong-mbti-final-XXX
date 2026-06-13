@@ -1,10 +1,9 @@
-// 虎皮椒V3 支付下单
 import crypto from 'crypto';
 import qs from 'querystring';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ code: -1, msg: "仅支持POST" });
+        return res.status(405).json({ code: -1, msg: "仅支持POST请求" });
     }
 
     const APPID = "201906181673";
@@ -13,65 +12,60 @@ export default async function handler(req, res) {
 
     const { order_no, price, goods_name } = req.body;
     if (!order_no || !price || !goods_name) {
-        return res.status(400).json({ code: -1, msg: "参数不全" });
+        return res.json({ code: -1, msg: "订单参数缺失" });
     }
 
-    const totalFee = Math.round(Number(price) * 100);
+    const total_fee = Math.round(Number(price) * 100);
     const time = Math.floor(Date.now() / 1000);
-    const host = req.headers.host;
     const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const domain = req.headers.host;
 
+    // 固定参数顺序，官方要求按ASCII升序
     const params = {
         appid: APPID,
-        time: time,
-        out_trade_no: order_no,
-        total_fee: totalFee,
         body: goods_name,
-        notify_url: `${protocol}://${host}/api/notify`,
-        return_url: `${protocol}://${host}`,
+        notify_url: `${protocol}://${domain}/api/notify`,
+        out_trade_no: order_no,
+        return_url: `${protocol}://${domain}`,
+        time: time,
+        total_fee: total_fee,
         type: "WAP"
     };
 
-    // 官方标准签名
-    const hash = buildHash(params, APPSECRET);
+    // 官方签名算法
+    let signStr = '';
+    const keys = Object.keys(params).sort();
+    for (const k of keys) {
+        signStr += `${k}=${params[k]}&`;
+    }
+    signStr += `key=${APPSECRET}`;
+    const hash = crypto.createHash('md5').update(signStr).digest('hex').toUpperCase();
     params.hash = hash;
 
-    const form = qs.stringify(params);
+    const postData = qs.stringify(params);
+
     try {
-        const resp = await fetch(API_URL, {
-            method: "POST",
+        const response = await fetch(API_URL, {
+            method: 'POST',
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: form
+            body: postData
         });
-        const rawTxt = await resp.text();
-        let data;
+        const raw = await response.text();
+        let ret;
         try {
-            data = JSON.parse(rawTxt);
-        } catch {
-            return res.json({ code: -2, msg: `返回非JSON:${rawTxt}` });
+            ret = JSON.parse(raw);
+        } catch (e) {
+            return res.json({ code: -99, msg: `接口返回非JSON：${raw}` });
         }
 
-        if (data.return_code === "SUCCESS" && data.pay_url) {
-            return res.json({ code: 0, pay_url: data.pay_url, order_no });
+        if (ret.return_code === 'SUCCESS' && ret.pay_url) {
+            return res.json({ code: 0, pay_url: ret.pay_url });
         } else {
-            return res.json({ code: -2, msg: `虎皮椒报错:${JSON.stringify(data)}` });
+            return res.json({ code: -2, msg: JSON.stringify(ret) });
         }
     } catch (err) {
-        return res.json({ code: -3, msg: `请求异常:${err.message}` });
+        return res.json({ code: -3, msg: `请求异常：${err.message}` });
     }
-}
-
-// 核心修复：去掉末尾多余&
-function buildHash(params, secretKey) {
-    const keys = Object.keys(params).sort();
-    const parts = [];
-    for (const k of keys) {
-        const v = params[k];
-        if (v === undefined || v === "" || k === "hash") continue;
-        parts.push(`${k}=${v}`);
-    }
-    const signSrc = parts.join("&") + `&key=${secretKey}`;
-    return crypto.createHash("md5").update(signSrc).digest("hex").toUpperCase();
 }

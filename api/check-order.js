@@ -18,42 +18,37 @@ export default async function handler(req, res) {
     const time = Math.floor(Date.now() / 1000);
     const params = {
         appid: APPID,
-        time: time,
-        out_trade_no: order_no
+        out_trade_no: order_no,
+        time: time
     };
-    const hash = buildHash(params, APPSECRET);
+
+    let signStr = '';
+    const keys = Object.keys(params).sort();
+    for (const k of keys) {
+        signStr += `${k}=${params[k]}&`;
+    }
+    signStr += `key=${APPSECRET}`;
+    const hash = crypto.createHash('md5').update(signStr).digest('hex').toUpperCase();
     params.hash = hash;
 
-    const form = qs.stringify(params);
+    const postData = qs.stringify(params);
     try {
         const resp = await fetch(QUERY_URL, {
-            method: "POST",
+            method: 'POST',
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: form
+            body: postData
         });
-        const rawTxt = await resp.text();
-        const data = JSON.parse(rawTxt);
+        const raw = await resp.text();
+        const ret = JSON.parse(raw);
 
-        if (data.return_code === "SUCCESS" && data.trade_status === "SUCCESS") {
-            return res.json({ code: 0, paid: true, msg: "已支付" });
+        if (ret.return_code === "SUCCESS" && ret.trade_status === "SUCCESS") {
+            return res.json({ code: 0, paid: true });
         } else {
-            return res.json({ code: 0, paid: false, msg: data.return_msg || "未支付" });
+            return res.json({ code: 0, paid: false, msg: ret.return_msg });
         }
     } catch (err) {
-        return res.json({ code: -2, msg: `查询异常:${err.message}` });
+        return res.json({ code: -2, msg: `查询异常：${err.message}` });
     }
-}
-
-function buildHash(params, secretKey) {
-    const keys = Object.keys(params).sort();
-    const parts = [];
-    for (const k of keys) {
-        const v = params[k];
-        if (v === undefined || v === "" || k === "hash") continue;
-        parts.push(`${k}=${v}`);
-    }
-    const signSrc = parts.join("&") + `&key=${secretKey}`;
-    return crypto.createHash("md5").update(signSrc).digest("hex").toUpperCase();
 }
