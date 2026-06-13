@@ -19,10 +19,11 @@ export default async function handler(req, res) {
     const nonce_str = crypto.randomBytes(8).toString('hex');
 
     const params = {
+        version: "1.1",
         appid: APPID,
+        trade_order_id: order_no,
         time: time,
-        nonce_str: nonce_str,
-        out_trade_no: order_no
+        nonce_str: nonce_str
     };
 
     // 签名算法和下单完全一致

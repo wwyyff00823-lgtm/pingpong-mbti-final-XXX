@@ -15,27 +15,25 @@ export default async function handler(req, res) {
         return res.json({ code: -1, msg: "订单参数缺失" });
     }
 
-    const total_fee = Math.round(Number(price) * 100);
     const time = Math.floor(Date.now() / 1000);
-    const nonce_str = crypto.randomBytes(8).toString('hex'); // 必填随机串
+    const nonce_str = crypto.randomBytes(8).toString('hex');
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const domain = req.headers.host;
 
-    // 所有业务参数
+    // 严格按官方文档的必填参数
     const params = {
-        appid: APPID,
-        time: time,
-        nonce_str: nonce_str,
-        out_trade_no: order_no,
-        total_fee: total_fee,
-        body: goods_name,
+        version: "1.1",          // 必填，固定值
+        appid: APPID,            // 必填
+        trade_order_id: order_no,// 必填，商户订单号（之前参数名写错了）
+        total_fee: price,        // 必填，单位：元！！不是分
+        title: goods_name,       // 必填，订单标题（之前参数名写错了）
+        time: time,              // 必填
+        nonce_str: nonce_str,    // 必填
         notify_url: `${protocol}://${domain}/api/notify`,
-        return_url: `${protocol}://${domain}`,
-        type: "WAP"
+        return_url: `${protocol}://${domain}`
     };
 
-    // ========== 官方标准签名算法 ==========
-    // 1. 按ASCII排序，过滤空值，排除hash
+    // 官方标准签名算法
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
@@ -44,15 +42,11 @@ export default async function handler(req, res) {
             signStr += `${key}=${value}&`;
         }
     });
-    // 去掉末尾最后一个&
     signStr = signStr.slice(0, -1);
-    // 2. 直接拼接密钥（没有&、没有key=！！核心修正点）
     signStr += APPSECRET;
-    // 3. MD5小写
     const hash = crypto.createHash('md5').update(signStr).digest('hex').toLowerCase();
     params.hash = hash;
 
-    // 表单提交
     const postData = qs.stringify(params);
 
     try {
