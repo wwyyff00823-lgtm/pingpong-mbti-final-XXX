@@ -16,9 +16,14 @@ export default async function handler(req, res) {
     if (!order_no) {
         return res.status(400).json({ code: -1, msg: "订单号不能为空" });
     }
-
-    const params = { appid: APPID, out_trade_no: order_no };
-    params.sign = generateSign(params, APPSECRET);
+    const time = Math.floor(Date.now() / 1000);
+    const params = {
+        appid: APPID,
+        time: time,
+        out_trade_no: order_no
+    };
+    const sign = generateSign(params, APPSECRET);
+    params.hash = sign;
     console.log("【订单查询】请求参数", params);
 
     try {
@@ -50,7 +55,7 @@ function generateSign(params, secret) {
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
-        if (params[key] !== '' && params[key] !== undefined && key !== 'sign') {
+        if (params[key] !== '' && params[key] !== undefined && key !== 'hash' && key !== 'sign') {
             signStr += `${key}=${params[key]}&`;
         }
     });

@@ -22,9 +22,12 @@ export default async function handler(req, res) {
     const totalFee = Math.round(Number(price) * 100);
     const host = req.headers.host;
     const protocol = req.headers['x-forwarded-proto'] || 'https';
+    // 新增必填time时间戳（10位秒级时间戳）
+    const time = Math.floor(Date.now() / 1000);
 
     const params = {
         appid: APPID,
+        time: time, // 新增必填字段
         out_trade_no: order_no,
         total_fee: totalFee,
         body: goods_name,
@@ -35,11 +38,10 @@ export default async function handler(req, res) {
     console.log("【创建订单】组装请求参数", params);
 
     const sign = generateSign(params, APPSECRET);
-    params.sign = sign;
-    console.log("【创建订单】计算签名sign：", sign);
+    params.hash = sign; // V3新版字段名不再是sign，改成hash！！核心坑点
+    console.log("【创建订单】计算hash签名：", sign);
 
     try {
-        // V3必须表单提交，不能JSON
         const formData = qs.stringify(params);
         const payRes = await fetch(API_URL, {
             method: "POST",
@@ -81,7 +83,7 @@ function generateSign(params, secret) {
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
-        if (params[key] !== '' && params[key] !== undefined && key !== 'sign') {
+        if (params[key] !== '' && params[key] !== undefined && key !== 'hash' && key !== 'sign') {
             signStr += `${key}=${params[key]}&`;
         }
     });
