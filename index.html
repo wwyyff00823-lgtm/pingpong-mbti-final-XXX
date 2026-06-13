@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>乒乓人的专属MBTI测试</title>
+<meta name="description" content="30道专业乒乓性格测试，结合开球网积分测算你的专属打球人格">
+<link href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-10-M/tailwindcss/3.3.2/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-10-M/font-awesome/6.4.0/css/all.min.css">
+<script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-10-M/qrcodejs/1.5.3/qrcode.min.js"></script>
+<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-10-M/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --main: #ff5722;
+  --light-bg: #fef7f2;
+  --dark-text: #222;
+}
+body {
+  background-color: var(--light-bg);
+  color: var(--dark-text);
+}
+.btn-primary {
+  background-color: var(--main);
+  color: #fff;
+  padding: 1rem 2.8rem;
+  border-radius: 999px;
+  font-weight: bold;
+  transition: 0.25s ease;
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+.btn-primary:active {
+  transform: scale(0.96);
+}
+.card-box {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 1.8rem;
+}
+.pay-mask {
+  background: rgba(0,0,0,0.62);
+  backdrop-filter: blur(4px);
+}
+#share-card {
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+}
+.text-main {
+  color: var(--main);
+}
+.bg-main {
+  background-color: var(--main);
+}
+</style>
+</head>
+<body class="font-sans min-h-screen">
+
+<!-- 首页封面 -->
+<div id="page-home" class="min-h-screen flex flex-col items-center justify-center px-4 py-10 text-center">
+  <h1 class="text-[clamp(1.8rem,5vw,2.8rem)] font-bold mb-4">乒乓人的专属MBTI测试</h1>
+  <p class="text-gray-600 text-base md:text-lg mb-3">30道题，5分钟情景选择题，快速判断你的专属打球人格</p>
+  <p class="text-gray-500 mb-2">请输入你的开球网积分：<input type="number" id="score-kaiqiu" class="border px-2 py-1 w-32 ml-2" placeholder="例：1520"></p>
+  <p class="text-gray-500 mb-10"><i class="fa-solid fa-users mr-1"></i>已有 <span id="test-num">21945</span> 人测试</p>
+
+  <button id="btn-start" class="btn-primary">
+    <i class="fa-solid fa-play-circle mr-2"></i>开始测试
+  </button>
+  <div class="mt-auto pt-12 text-sm text-gray-400">结果仅供娱乐参考</div>
+</div>
+
+<!-- 答题页面 -->
+<div id="page-question" class="hidden max-w-2xl mx-auto px-4 py-10">
+  <div class="card-box">
+    <div class="flex justify-between items-center mb-4">
+      <span id="module-name" class="text-main font-semibold"></span>
+      <span id="progress-text" class="text-sm text-gray-500"></span>
+    </div>
+    <div class="w-full h-2 bg-gray-200 rounded-full mb-6">
+      <div id="progress-bar" class="h-full bg-main rounded-full transition-all"></div>
+    </div>
+
+    <h3 id="question-title" class="text-xl font-bold mb-6"></h3>
+    <div id="option-list" class="space-y-3 mb-8"></div>
+
+    <div class="flex justify-between">
+      <button id="btn-prev" class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40" disabled>
+        <i class="fa-solid fa-chevron-left mr-1"></i>上一题
+      </button>
+      <button id="btn-next" class="px-5 py-2 bg-main text-white rounded-lg hover:opacity-90">
+        下一题<i class="fa-solid fa-chevron-right ml-1"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 结果弹窗 -->
+<div id="modal-result" class="hidden fixed inset-0 z-[999] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-2xl overflow-hidden relative">
+    <button id="modal-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-xl z-10">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div class="p-6 md:p-8 overflow-y-auto max-h-[70vh]" id="result-container">
+      <div id="share-card">
+        <h2 class="text-2xl font-bold text-center mb-4">你的乒乓人格测试结果</h2>
+        <div id="person-type-name" class="text-main text-xl font-bold text-center mb-3"></div>
+        <div id="person-brief-desc" class="mb-6 border-b pb-5 text-gray-700"></div>
+
+        <!-- 付费遮罩 -->
+        <div id="pay-mask-wrap" class="pay-mask absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center">
+          <h3 class="text-xl font-bold mb-3">解锁完整1000字深度报告</h3>
+          <p class="mb-6 opacity-90">专属训练方案+实战套路+器材推荐完整解析</p>
+          <button id="btn-pay-unlock" class="bg-main px-8 py-3 rounded-full font-bold text-lg">仅需 9.9 元立即解锁</button>
+        </div>
+
+        <div id="full-report-block" class="hidden mt-6 whitespace-pre-line text-gray-700 leading-relaxed"></div>
+
+        <!-- 二维码区域 -->
+        <div class="mt-8 pt-6 border-t">
+          <p class="text-center text-gray-600 mb-3">分享朋友圈，好友扫码立即测试</p>
+          <div id="qrcode-box" class="flex justify-center"></div>
+          <div class="flex justify-center gap-4 mt-4 flex-wrap">
+            <button id="btn-save-img" class="px-4 py-2 border border-main text-main rounded-lg">
+              <i class="fa-solid fa-download mr-1"></i>保存分享图
+            </button>
+            <button id="btn-restart" class="px-4 py-2 bg-main text-white rounded-lg">
+              <i class="fa-solid fa-refresh mr-1"></i>重新测试
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 支付成功弹窗 -->
+<div id="modal-pay-success" class="hidden fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl p-8 text-center max-w-sm w-full">
+    <div class="text-5xl text-green-500 mb-4"><i class="fa-solid fa-check-circle"></i></div>
+    <h3 class="text-xl font-bold mb-2">支付成功</h3>
+    <p class="text-gray-600 mb-6">完整深度报告已解锁，向下滑动查看全部内容</p>
+    <button id="btn-pay-confirm" class="px-6 py-2 bg-main text-white rounded-lg">确定查看报告</button>
+  </div>
+</div>
+
+<script src="./script.js"></script>
+</body>
+</html>
