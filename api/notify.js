@@ -1,31 +1,28 @@
-// 虎皮椒支付成功异步回调接口
-// 验签通过后才视为有效支付，防止伪造请求
+// 虎皮椒V3 异步支付回调接口
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
-    const APPSECRET = "685ed8bb1d5468e8771aaee1109913c4"; // 替换为你的密钥
-
-    // 虎皮椒POST返回的参数
+    const APPSECRET = "685ed8bb1d5468e8771aaee1109913c4";
     const body = req.method === 'POST' ? req.body : req.query;
-    const { out_trade_no, total_fee, trade_status, sign } = body;
+    console.log("【回调notify】虎皮椒推送原始数据", body);
 
-    // 基础参数校验
+    const { out_trade_no, total_fee, trade_status, sign } = body;
     if (!out_trade_no || !sign || trade_status !== "SUCCESS") {
+        console.log("【回调notify】参数校验不通过，拒绝", { trade_status });
         return res.send("fail");
     }
 
-    // 验签
     const params = { ...body };
     delete params.sign;
-    const calculatedSign = generateSign(params, APPSECRET);
-    
-    if (calculatedSign !== sign.toUpperCase()) {
+    const calcSign = generateSign(params, APPSECRET);
+    console.log("【回调notify】本地计算签名", calcSign, "远端签名", sign.toUpperCase());
+
+    if (calcSign !== sign.toUpperCase()) {
+        console.log("【回调notify】签名校验失败");
         return res.send("fail");
     }
 
-    // 验签通过，订单支付有效
-    // 此处可扩展：写入数据库、发送通知等
-    // 必须返回success，否则虎皮椒会重复推送回调
+    console.log("【回调notify】支付校验成功，订单", out_trade_no);
     res.send("success");
 }
 
