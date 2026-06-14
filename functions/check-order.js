@@ -6,7 +6,6 @@ export default {
       "Access-Control-Allow-Headers": "Content-Type"
     };
 
-    // 处理跨域OPTIONS预检
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
