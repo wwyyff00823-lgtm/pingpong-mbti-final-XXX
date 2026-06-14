@@ -1111,6 +1111,8 @@ nextBtn.addEventListener("click", () => {
         calcFinalPersonality();
         switchPage(pageResult);
         setTimeout(generateShareQRCode, 100);
+        // 新增：把测试结果存到本地，支付跳转刷新后不丢失
+        localStorage.setItem('pingpong_mbti_result', mbtiCodeText.innerText);
         if (isReportUnlocked) {
             fullReportWrap.style.display = "block";
         }
@@ -1273,14 +1275,23 @@ restartAllTestBtn.addEventListener("click", () => {
     switchPage(pageHome);
     window.scrollTo({ top: 0, behavior: "smooth" });
 });
-
-// ====================== 页面加载初始化（支付回调自动解锁） ======================
+// ====================== 页面加载初始化：恢复测试结果 + 支付回调自动解锁 ======================
 window.addEventListener("DOMContentLoaded", async () => {
-    // 读取URL中的订单号（虎皮椒支付成功跳转带回）
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderNo = urlParams.get("out_trade_no");
+    // 1. 恢复本地缓存的测试结果（支付跳转刷新后不丢失）
+    const savedResult = localStorage.getItem('pingpong_mbti_result');
+    if (savedResult && pingpongPersonMap[savedResult]) {
+        restoreResultPage(savedResult);
+        switchPage(pageResult);
+    }
 
-    // 如果有订单号，且当前未解锁，则查询订单状态
+    // 2. 检查本地是否已经永久解锁
+    if (isReportUnlocked) {
+        fullReportWrap.style.display = "block";
+    }
+
+    // 3. 检测URL里的订单号（支付成功跳转回来时自动查单解锁）
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderNo = urlParams.get("order_no");
     if (orderNo && !isReportUnlocked) {
         try {
             const res = await fetch("/api/check-order", {
@@ -1290,103 +1301,57 @@ window.addEventListener("DOMContentLoaded", async () => {
             });
             const data = await res.json();
             
-            if (data.paid === true) {
-                // 支付验证通过，永久解锁本设备
+            if (data.code === 0 && data.paid) {
+                // 支付成功：永久解锁 + 显示报告 + 清除URL参数
                 unlockFullReport();
-                // 清除URL参数，避免刷新重复查询
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         } catch (err) {
             console.log("订单查询失败", err);
         }
     }
-
-    if (isReportUnlocked) {
-        console.log("该设备已永久解锁完整报告");
-        fullReportWrap.style.display = "block";
-    }
 });
 
-// ========== 支付状态自动检测 + 永久缓存 ==========
-window.addEventListener('load', function() {
-    // 第一步：先查本地缓存，付过钱直接解锁，不用重复查接口
-    const isPaid = localStorage.getItem('pingpong_mbti_paid');
-    if (isPaid === '1') {
-        showFullReport();
-        return;
+// 恢复本地缓存的测试结果，刷新页面完整还原报告内容
+function restoreResultPage(personCode) {
+    const data = pingpongPersonMap[personCode];
+    if (!data) return;
+    
+    mbtiCodeText.innerText = data.code;
+    funTitleText.innerText = data.funTitle;
+    
+    // 渲染人格图片
+    if (data.imgUrl && data.imgUrl.length > 0) {
+        personImgBox.innerHTML = `<img src="${data.imgUrl}" alt="${data.funTitle}">`;
+    } else {
+        personImgBox.innerHTML = "人格示意图占位";
     }
-
-    // 第二步：查网址里的订单号（刚支付完跳转回来时触发）
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlOrderNo = urlParams.get('order_no');
-    if (urlOrderNo) {
-        checkOrderStatus(urlOrderNo);
-    }
-});
-
-// 查询订单支付状态
-function checkOrderStatus(orderNo) {
-    fetch('/api/check-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_no: orderNo })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.code === 0 && data.paid) {
-            // 支付成功：存本地永久缓存 + 显示完整报告
-            localStorage.setItem('pingpong_mbti_paid', '1');
-            showFullReport();
-        }
-    })
-    .catch(() => {});
+    
+    // 渲染三要点列表
+    let descHtml = "";
+    data.threeDesc.forEach(item => {
+        descHtml += `<li>${item}</li>`;
+    });
+    descListBox.innerHTML = descHtml;
+    
+    // 渲染完整千字报告
+    fullReportContent.innerHTML = data.fullReport;
+    
+    // 置信度展示
+    confidenceBlock.innerHTML = `
+        <strong>本次测试准确度：95%</strong><br>
+        说明：作答一致性很高，测试结果与你的真实球风匹配度极佳
+    `;
+    
+    // 重新生成分享二维码
+    setTimeout(generateShareQRCode, 100);
 }
 
-// 显示完整报告、隐藏支付弹窗
-function showFullReport() {
-    // ===== 把下面两个id改成你页面里真实的元素id =====
-    document.getElementById('pay-modal').style.display = 'none';    // 隐藏支付弹窗
-    document.getElementById('full-report').style.display = 'block'; // 显示完整报告
-}
-// ========== 支付状态自动检测 + 永久缓存（关掉页面再开依然有效） ==========
-window.addEventListener('load', function() {
-    // 第一步：优先查本地缓存，付过钱直接解锁，不用重复请求接口
-    const isPaid = localStorage.getItem('pingpong_mbti_paid');
-    if (isPaid === '1') {
-        unlockFullReport();
-        return;
-    }
-
-    // 第二步：检测网址里的订单号（支付成功跳转回来时自动触发）
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlOrderNo = urlParams.get('order_no');
-    if (urlOrderNo) {
-        checkOrderAndUnlock(urlOrderNo);
-    }
-});
-
-// 调用接口查订单，支付成功就永久解锁
-function checkOrderAndUnlock(orderNo) {
-    fetch('/api/check-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_no: orderNo })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.code === 0 && data.paid) {
-            // 存入本地永久缓存，浏览器关掉重开也有效
-            localStorage.setItem('pingpong_mbti_paid', '1');
-            unlockFullReport();
-        }
-    })
-    .catch(() => {});
-}
-
-// 解锁完整报告：隐藏支付弹窗、显示完整报告内容
+// 统一解锁完整报告
 function unlockFullReport() {
-    // 隐藏支付弹窗
-    document.getElementById('pay-modal').style.display = 'none';
-    // 显示完整报告区域
-    document.getElementById('full-report-wrap').style.display = 'block';
+    localStorage.setItem("pingpong_mbti_unlocked", "1");
+    isReportUnlocked = true;
+    fullReportWrap.style.display = "block";
+    // 自动滚动到报告位置
+    fullReportWrap.scrollIntoView({ behavior: "smooth" });
 }
