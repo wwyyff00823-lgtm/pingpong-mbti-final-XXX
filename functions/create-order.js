@@ -1,16 +1,19 @@
-export default async function onRequest({ request }) {
+export default async function onRequest(event) {
+  const { request } = event;
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400"
   };
 
-  // 专门接收OPTIONS预检，彻底解决405报错
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders, status: 200 });
+  // 优先处理OPTIONS预检，根治405
+  if (request.method.toUpperCase() === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
+
   if (request.method !== "POST") {
-    return new Response(JSON.stringify({ code: -3, msg: "仅允许POST调用" }), { headers: corsHeaders });
+    return new Response(JSON.stringify({ code: -3, msg: "仅支持POST调用" }), { headers: corsHeaders });
   }
 
   const APPID = "201906181673";
@@ -39,15 +42,14 @@ export default async function onRequest({ request }) {
     });
     const payData = await payRes.json();
     return new Response(JSON.stringify({ code: 0, orderNo, data: payData }), { headers: corsHeaders });
-  } catch (e) {
-    return new Response(JSON.stringify({ code: -2, msg: "接口异常：" + e.message }), { headers: corsHeaders });
+  } catch (err) {
+    return new Response(JSON.stringify({ code: -2, msg: "接口异常：" + err.message }), { headers: corsHeaders });
   }
 }
 
 async function getMd5(str) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  const hashBuf = await crypto.subtle.digest("MD5", data);
+  const u8a = new TextEncoder().encode(str);
+  const hashBuf = await crypto.subtle.digest("MD5", u8a);
   return Array.from(new Uint8Array(hashBuf))
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
