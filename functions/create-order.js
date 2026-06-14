@@ -1,24 +1,18 @@
 export default async function onRequest({ request }) {
-  // 跨域头固定配置
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type"
   };
 
-  // 【关键】先处理浏览器OPTIONS预检请求，否则必然405
+  // 专门接收OPTIONS预检，彻底解决405报错
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders, status: 200 });
   }
-
-  // 限制只允许POST方式调用接口
   if (request.method !== "POST") {
-    return new Response(JSON.stringify({ code: -3, msg: "仅支持POST请求" }), {
-      headers: corsHeaders
-    });
+    return new Response(JSON.stringify({ code: -3, msg: "仅允许POST调用" }), { headers: corsHeaders });
   }
 
-  // ========== 下方原有业务代码完全不用改动 ==========
   const APPID = "201906181673";
   const APPSECRET = "685ed8bb1d5468e8771aaee1109913c4";
   const HOST = "https://api.xunhupay.com";
@@ -29,7 +23,6 @@ export default async function onRequest({ request }) {
     if (!orderNo || !price) {
       return new Response(JSON.stringify({ code: -1, msg: "参数缺失" }), { headers: corsHeaders });
     }
-
     const signStr = `appid=${APPID}&orderid=${orderNo}&price=${price}${APPSECRET}`;
     const sign = await getMd5(signStr);
 
@@ -51,11 +44,11 @@ export default async function onRequest({ request }) {
   }
 }
 
-// MD5加密工具函数
 async function getMd5(str) {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
-  const hashBuffer = await crypto.subtle.digest("MD5", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  const hashBuf = await crypto.subtle.digest("MD5", data);
+  return Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 }
