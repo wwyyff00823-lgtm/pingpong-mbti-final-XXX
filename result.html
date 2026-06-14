@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+    <title>乒乓MBTI - 测试结果</title>
+    <script src="/script.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+        body { background-color: #f9f7f2; padding: 15px; line-height: 1.8; color: #444; }
+        .wrap { max-width: 420px; margin: 0 auto; }
+
+        /* MBTI 字母样式 */
+        .mbti-code {
+            font-size: 42px;
+            color: #c81623;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+            margin: 20px 0 10px;
+        }
+        /* 人格绰号 */
+        .person-name {
+            font-size: 26px;
+            color: #c81623;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        /* 占位图（1:1方形） */
+        .avatar-box {
+            width: 180px;
+            height: 180px;
+            background-color: #ffe8e8;
+            border-radius: 12px;
+            margin: 0 auto 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c81623;
+            font-size: 16px;
+        }
+        /* 三句概述 */
+        .brief-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+        .brief-item {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        /* 诚信警示框 */
+        .warn-box {
+            background-color: #fff9d9;
+            border: 1px solid #f0d080;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            color: #8c4a00;
+            font-size: 15px;
+        }
+        /* 支付区域 */
+        .pay-tip {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+        .pay-btn {
+            width: 100%;
+            height: 52px;
+            line-height: 52px;
+            background: linear-gradient(90deg, #c81623, #ff7800);
+            color: #fff;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(200,22,35,0.3);
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .pay-btn:active { transform: scale(0.98); }
+        .pay-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        /* 完整报告区域 */
+        .report-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            border: 1px solid #eee;
+            display: none;
+        }
+        .report-content {
+            font-size: 15px;
+            line-height: 1.9;
+            white-space: pre-line;
+        }
+        /* 重新测试按钮 */
+        .reset-btn {
+            width: 100%;
+            height: 48px;
+            line-height: 48px;
+            background: #666;
+            color: #fff;
+            font-size: 17px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+        /* 加载提示 */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 15px;
+            color: #666;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <!-- MBTI 大字母 -->
+        <div class="mbti-code" id="mbtiCode"></div>
+        <!-- 人格绰号 -->
+        <div class="person-name" id="personName"></div>
+        <!-- 1:1 方形占位图 -->
+        <div class="avatar-box">乒乓人格形象</div>
+        <!-- 三句特点概述 -->
+        <div class="brief-box" id="briefBox"></div>
+        <!-- 诚信校验警告 -->
+        <div class="div warn-box" id="warnBox" style="display: none;">
+            ⚠️ 检测到答题存在多处矛盾，本次测试结果准确度较低
+        </div>
+
+        <!-- 加载提示 -->
+        <div class="loading" id="loading">正在校验订单状态...</div>
+
+        <!-- 付费解锁区域 -->
+        <div class="pay-tip" id="payTip">
+            查看完整千字报告、涨球方案、器材建议<br>
+            仅需9.9元解锁全部内容
+        </div>
+        <button class="pay-btn" id="payBtn">立刻付款解锁报告</button>
+
+        <!-- 完整报告区域（支付后显示） -->
+        <div class="report-box" id="reportBox">
+            <div class="report-content" id="reportContent"></div>
+        </div>
+
+        <!-- 重新测试按钮 -->
+        <button class="reset-btn" id="resetBtn">重新测试</div>
+    </div>
+
+    <script>
+        // 全局错误捕获：单个报错不导致整页卡死
+        window.onerror = function(msg,url,line){
+            alert("页面出现小异常，请刷新重试：" + msg);
+            return true;
+        };
+
+        // 页面元素
+        const mbtiCode = document.getElementById("mbtiCode");
+        const personName = document.getElementById("personName");
+        const briefBox = document.getElementById("briefBox");
+        const warnBox = document.getElementById("warnBox");
+        const payTip = document.getElementById("payTip");
+        const payBtn = document.getElementById("payBtn");
+        const loading = document.getElementById("loading");
+        const reportBox = document.getElementById("reportBox");
+        const reportContent = document.getElementById("reportContent");
+        const resetBtn = document.getElementById("resetBtn");
+
+        // 全局变量
+        let userLevel = "";
+        let mbtiType = "";
+        let integrityScore = true;
+        let currentOrderNo = "";
+        let pollTimer = null; // 轮询定时器（防止死循环）
+
+        // 初始化页面
+        function initResult(){
+            try {
+                // 读取本地存储数据
+                userLevel = Storage.get("userLevel") || "low";
+                mbtiType = Storage.get("mbtiType") || "ESTP";
+                integrityScore = Storage.get("integrityScore") ?? true;
+                currentOrderNo = Storage.get("orderNo") || "";
+                const isPay = Storage.get("isPay") || false;
+
+                // 校验MBTI数据是否存在
+                const mbtiInfo = MBTI_DATA[mbtiType];
+                if(!mbtiInfo){
+                    alert("测试数据异常，请返回重新答题！");
+                    window.location.href = "/index.html";
+                    return;
+                }
+
+                // 渲染MBTI字母、绰号
+                mbtiCode.innerText = mbtiType;
+                personName.innerText = mbtiInfo.name;
+
+                // 渲染三句概述
+                let briefHtml = "";
+                mbtiInfo.brief.forEach(item => {
+                    briefHtml += `<div class="brief-item">${item}</div>`;
+                });
+                briefBox.innerHTML = briefHtml;
+
+                // 显示诚信警告（答卷无效）
+                if(!integrityScore){
+                    warnBox.style.display = "block";
+                }
+
+                // 已支付：直接展示完整报告
+                if(isPay && currentOrderNo){
+                    showFullReport();
+                    payTip.style.display = "none";
+                    payBtn.style.display = "none";
+                }
+            } catch (e) {
+                console.error("初始化失败：", e);
+                alert("页面初始化失败，请刷新页面！");
+            }
+        }
+
+        // 展示完整报告（根据档位匹配内容）
+        function showFullReport(){
+            try {
+                const mbtiInfo = MBTI_DATA[mbtiType];
+                let reportText = "";
+                // 匹配三档内容
+                switch(userLevel){
+                    case "low": reportText = mbtiInfo.report.low; break;
+                    case "mid": reportText = mbtiInfo.report.mid; break;
+                    case "high": reportText = mbtiInfo.report.high; break;
+                    default: reportText = mbtiInfo.report.low;
+                }
+                reportContent.innerText = reportText;
+                reportBox.style.display = "block";
+            } catch (e) {
+                alert("报告加载失败：" + e.message);
+            }
+        }
+
+        // 创建订单 + 唤起虎皮椒支付
+        async function createPayOrder(){
+            try {
+                payBtn.disabled = true;
+                loading.style.display = "block";
+
+                // 调用Cloudflare Functions 创建订单接口
+                const res = await fetch(API_URL.createOrder, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        orderNo: createOrderNo(),
+                        price: HUPIJIAO_CONFIG.payPrice
+                    })
+                });
+
+                const data = await res.json();
+                if(data.code !== 0){
+                    throw new Error("订单创建失败：" + data.msg);
+                }
+
+                currentOrderNo = data.orderNo;
+                Storage.set("orderNo", currentOrderNo);
+
+                // 唤起虎皮椒H5支付
+                const payUrl = `https://api.xunhupay.com/pay?appid=${HUPIJIAO_CONFIG.appId}&orderid=${currentOrderNo}&price=${HUPIJIAO_CONFIG.payPrice}&subject=${encodeURIComponent(HUPIJIAO_CONFIG.subject)}&body=${encodeURIComponent(HUPIJIAO_CONFIG.body)}&paytype=wxh5`;
+                window.location.href = payUrl;
+
+            } catch (e) {
+                loading.style.display = "none";
+                payBtn.disabled = false;
+                alert("发起支付失败：" + e.message);
+                console.error(e);
+            }
+        }
+
+        // 轮询订单状态（支付后自动校验，加超时防止死循环）
+        function pollOrderStatus(){
+            // 最多轮询30次（约2.5分钟），超时自动停止
+            let pollCount = 0;
+            const maxPoll = 30;
+
+            pollTimer = setInterval(async () => {
+                pollCount++;
+                if(pollCount > maxPoll){
+                    clearInterval(pollTimer);
+                    loading.style.display = "none";
+                    alert("订单查询超时，请手动刷新页面查看结果！");
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_URL.checkOrder}?orderNo=${currentOrderNo}`);
+                    const data = await res.json();
+
+                    // 支付成功
+                    if(data.payStatus === 1){
+                        clearInterval(pollTimer);
+                        loading.style.display = "none";
+                        Storage.set("isPay", true);
+                        payTip.style.display = "none";
+                        payBtn.style.display = "none";
+                        showFullReport();
+                    }
+                    // 订单关闭/支付失败
+                    else if(data.payStatus === 2){
+                        clearInterval(pollTimer);
+                        loading.style.display = "none";
+                        alert("订单已取消或支付失败，请重新尝试！");
+                        payBtn.disabled = false;
+                    }
+                } catch (e) {
+                    console.error("查询订单异常：", e);
+                }
+            }, 5000); // 每5秒查询一次订单
+        }
+
+        // 重新测试：清空本地数据，返回首页
+        resetBtn.addEventListener("click", function(){
+            // 清理所有存储 + 定时器
+            if(pollTimer) clearInterval(pollTimer);
+            Storage.clearAll();
+            window.location.href = "/index.html";
+        });
+
+        // 支付按钮点击
+        payBtn.addEventListener("click", createPayOrder);
+
+        // 页面返回/刷新时，自动轮询订单（支付后回到页面）
+        window.addEventListener("pageshow", function(){
+            if(currentOrderNo){
+                loading.style.display = "block";
+                pollOrderStatus();
+            }
+        });
+
+        // 页面加载执行初始化
+        window.onload = initResult;
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>乒乓MBTI - 答题中</title>
+    <script src="/script.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+        body { background-color: #f9f7f2; padding: 15px; }
+        .wrap { max-width: 420px; margin: 0 auto; }
+        .progress-box {
+            height: 14px;
+            background-color: #e5e5e5;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #c81623, #ff7800);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .q-title {
+            font-size: 21px;
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+        .option-list { margin-bottom: 40px; }
+        .option-item {
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 16px 14px;
+            margin-bottom: 14px;
+            font-size: 17px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-item.active {
+            border-color: #c81623;
+            background-color: #fff0f2;
+        }
+        .next-btn {
+            width: 100%;
+            height: 52px;
+            line-height: 52px;
+            background: linear-gradient(90deg, #c81623, #ff7800);
+            color: #fff;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(200,22,35,0.3);
+            cursor: pointer;
+        }
+        .next-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <!-- 进度条 -->
+        <div class="progress-box">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- 题目区域 -->
+        <div class="q-title" id="qTitle"></div>
+
+        <!-- 选项区域 -->
+        <div class="option-list" id="optionList"></div>
+
+        <!-- 下一题按钮 -->
+        <button class="next-btn" id="nextBtn">下一题</button>
+    </div>
+
+    <script>
+        let allQuestions = [];
+        let currentIndex = 0;
+        let userAnswers = Storage.get("answers") || [];
+        const progressBar = document.getElementById("progressBar");
+        const qTitle = document.getElementById("qTitle");
+        const optionList = document.getElementById("optionList");
+        const nextBtn = document.getElementById("nextBtn");
+
+        // 初始化：整题随机 + 每题选项随机
+        function initQuiz() {
+            // 题库整体打乱
+            allQuestions = shuffleArray([...QUESTION_LIST]);
+            currentIndex = userAnswers.length;
+            renderQuestion();
+        }
+
+        // 渲染当前题目
+        function renderQuestion() {
+            if(currentIndex >= allQuestions.length){
+                // 答题完毕：计算结果跳转
+                const { conflictCount, integrityScore } = calcIntegrity(userAnswers);
+                const mbtiType = calcMBTI(userAnswers);
+                Storage.set("answers", userAnswers);
+                Storage.set("integrityScore", integrityScore);
+                Storage.set("mbtiType", mbtiType);
+                window.location.href = "/result.html";
+                return;
+            }
+            const q = allQuestions[currentIndex];
+            // 更新进度
+            const percent = (currentIndex / allQuestions.length) * 100;
+            progressBar.style.width = percent + "%";
+            // 渲染标题
+            qTitle.innerText = q.title;
+            // 选项随机打乱
+            const randomOpts = shuffleArray([...q.options]);
+            let html = "";
+            randomOpts.forEach((opt, idx) => {
+                html += `<div class="option-item" data-text="${opt.text}" data-score='${JSON.stringify(opt.score)}' data-tag="${opt.tag}">${opt.text}</div>`;
+            });
+            optionList.innerHTML = html;
+
+            // 绑定选项点击
+            document.querySelectorAll(".option-item").forEach(item => {
+                item.addEventListener("click", function(){
+                    document.querySelectorAll(".option-item").forEach(i => i.classList.remove("active"));
+                    this.classList.add("active");
+                });
+            });
+        }
+
+        // 下一题
+        nextBtn.addEventListener("click", function(){
+            const activeOpt = document.querySelector(".option-item.active");
+            if(!activeOpt){
+                alert("请选择一个答案再继续！");
+                return;
+            }
+            // 记录答案
+            const q = allQuestions[currentIndex];
+            const selectText = activeOpt.dataset.text;
+            const selectScore = JSON.parse(activeOpt.dataset.score);
+            const selectTag = activeOpt.dataset.tag;
+            userAnswers.push({
+                questionId: q.id,
+                text: selectText,
+                score: selectScore,
+                tag: selectTag
+            });
+            Storage.set("answers", userAnswers);
+            currentIndex++;
+            renderQuestion();
+        });
+
+        // 页面加载初始化
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>

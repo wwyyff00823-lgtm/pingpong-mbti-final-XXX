@@ -3,523 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>业余乒乓球MBTI精准测试</title>
-    <!-- 国内稳定CDN：二维码生成库，和代码语法完全匹配 -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>业余乒乓球人的MBTI风格测试</title>
+    <script src="/script.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-        }
-
-        body {
-            background: #f5f7fa;
-            color: #111;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 24px;
-            min-height: 100vh;
-        }
-
-        .page {
-            display: none;
-        }
-        .page.active {
-            display: block;
-        }
-
-        /* ========== 首页样式 ========== */
-        .home-title {
-            font-size: 32px;
-            font-weight: 900;
-            text-align: center;
-            line-height: 1.2;
-            margin-bottom: 16px;
-        }
-
-        .home-subtitle {
-            font-size: 16px;
-            color: #666;
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        #score-input {
-            width: 100%;
-            padding: 16px 20px;
-            font-size: 18px;
-            border: 3px solid #000;
-            border-radius: 16px;
-            box-shadow: 4px 4px 0 #000;
-            outline: none;
-            margin-bottom: 24px;
-            background: #fff;
-        }
-
-        /* ========== 通用按钮样式 ========== */
-        .btn-success, .btn-gray, .btn-primary {
-            width: 100%;
-            padding: 16px;
-            font-size: 18px;
-            font-weight: 700;
-            border: 3px solid #000;
-            border-radius: 16px;
-            box-shadow: 4px 4px 0 #000;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            margin-bottom: 16px;
-        }
-
-        .btn-success:active, .btn-gray:active, .btn-primary:active {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0 #000;
-        }
-
-        .btn-success {
-            background: #00c853;
-            color: #fff;
-        }
-
-        .btn-gray {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .btn-primary {
-            background: #ff3b30;
-            color: #fff;
-        }
-
-        /* ========== 答题页样式 ========== */
-        .progress-bar-wrap {
-            width: 100%;
-            height: 12px;
-            background: #fff;
-            border: 2px solid #000;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+        body { background-color: #f9f7f2; padding: 20px 15px; }
+        .wrap { max-width: 420px; margin: 0 auto; }
+        h1 { font-size: 26px; color: #c81623; text-align: center; margin: 20px 0 10px; }
+        .desc { font-size: 16px; color: #555; text-align: center; margin-bottom: 35px; line-height: 1.6; }
+        .level-box { margin: 30px 0; }
+        .level-item {
+            border: 1px solid #ccc;
             border-radius: 10px;
-            margin-bottom: 24px;
-            overflow: hidden;
-        }
-
-        #progress-bar {
-            height: 100%;
-            background: #2979ff;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        #module-name-tag {
-            display: inline-block;
-            padding: 6px 16px;
-            background: #e3f2fd;
-            color: #1565c0;
-            border: 2px solid #1565c0;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        #question-container p {
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.4;
-            margin-bottom: 28px;
-        }
-
-        .answer-option {
-            display: block;
-            width: 100%;
-            padding: 16px 20px;
-            margin-bottom: 14px;
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            box-shadow: 4px 4px 0 #000;
+            padding: 18px 15px;
+            margin-bottom: 15px;
             cursor: pointer;
             font-size: 17px;
-            transition: all 0.1s ease;
-        }
-
-        .answer-option:hover {
-            background: #f0f7ff;
-        }
-
-        .answer-option input {
-            margin-right: 12px;
-            transform: scale(1.2);
-            vertical-align: middle;
-        }
-
-        .answer-option:has(input:checked) {
-            background: #e3f2fd;
-            border-color: #1565c0;
-        }
-
-        #next-btn {
-            margin-top: 10px;
-        }
-
-        /* ========== 结果页样式 ========== */
-        .result-card {
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 20px;
-            box-shadow: 6px 6px 0 #000;
-            padding: 28px 24px;
-            margin-bottom: 20px;
-        }
-
-        #mbti-code-text {
-            font-size: 48px;
-            font-weight: 900;
-            text-align: center;
-            letter-spacing: 4px;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        #fun-title-text {
-            font-size: 22px;
-            font-weight: 700;
-            text-align: center;
-            color: #d32f2f;
-            display: block;
-            margin-bottom: 24px;
-        }
-
-        #desc-list-box {
-            list-style: none;
-            padding: 0;
-        }
-
-        #desc-list-box li {
-            padding: 10px 0;
-            border-bottom: 1px dashed #ddd;
-            font-size: 16px;
-        }
-
-        #desc-list-box li:last-child {
-            border-bottom: none;
-        }
-
-        #confidence-block {
-            background: #fff8e1;
-            border: 2px solid #ff8f00;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 20px 0;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .pay-mask-tip {
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            box-shadow: 4px 4px 0 #000;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .pay-mask-tip h3 {
-            font-size: 20px;
-            margin-bottom: 10px;
-        }
-
-        .pay-mask-tip p {
-            color: #666;
-            margin-bottom: 16px;
-            font-size: 15px;
-        }
-
-        .qrcode-wrap {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        /* ========== 完整报告样式 ========== */
-        #full-report-wrap {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .report-section {
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            box-shadow: 4px 4px 0 #000;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .report-title {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #1565c0;
-        }
-
-        .report-section p {
-            font-size: 15px;
-            line-height: 1.7;
-            margin-bottom: 10px;
-            color: #222;
-        }
-
-        .report-section.blue { border-left: 8px solid #2979ff; }
-        .report-section.orange { border-left: 8px solid #ff9800; }
-        .report-section.green { border-left: 8px solid #4caf50; }
-        .report-section.purple { border-left: 8px solid #9c27b0; }
-
-        .anti-intuition {
-            background: #fce4ec;
-            border: 3px solid #c2185b;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 4px 4px 0 #c2185b;
-        }
-
-        .anti-intuition strong {
-            display: block;
-            font-size: 16px;
-            color: #c2185b;
-            margin-bottom: 8px;
-        }
-
-        /* ========== 弹窗样式 ========== */
-        .global-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .global-modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 #000;
-            padding: 32px 28px;
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .modal-content h2 {
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        .modal-content p {
-            text-align: center;
-            margin-bottom: 16px;
-            font-size: 16px;
             color: #333;
+            transition: all 0.2s;
+            position: relative;
         }
-
-        /* ========== 移动端适配 ========== */
-        @media (max-width: 768px) {
-            .container {
-                padding: 16px;
-            }
-
-            .home-title {
-                font-size: 24px;
-            }
-
-            .home-subtitle {
-                font-size: 14px;
-                margin-bottom: 24px;
-            }
-
-            #score-input {
-                padding: 14px 16px;
-                font-size: 16px;
-                box-shadow: 3px 3px 0 #000;
-            }
-
-            .btn-success, .btn-gray, .btn-primary {
-                padding: 14px;
-                font-size: 16px;
-                box-shadow: 3px 3px 0 #000;
-                margin-bottom: 12px;
-            }
-
-            .progress-bar-wrap {
-                height: 10px;
-                margin-bottom: 18px;
-            }
-
-            #module-name-tag {
-                font-size: 13px;
-                padding: 5px 12px;
-                margin-bottom: 16px;
-            }
-
-            #question-container p {
-                font-size: 18px;
-                margin-bottom: 20px;
-            }
-
-            .answer-option {
-                padding: 12px 16px;
-                font-size: 15px;
-                margin-bottom: 12px;
-                box-shadow: 3px 3px 0 #000;
-            }
-
-            .result-card {
-                padding: 20px 16px;
-                box-shadow: 4px 4px 0 #000;
-                border-radius: 16px;
-            }
-
-            #mbti-code-text {
-                font-size: 36px;
-                letter-spacing: 2px;
-            }
-
-            #fun-title-text {
-                font-size: 18px;
-                margin-bottom: 16px;
-            }
-
-            #desc-list-box li {
-                font-size: 14px;
-                padding: 8px 0;
-            }
-
-            #confidence-block {
-                padding: 12px;
-                font-size: 14px;
-            }
-
-            .report-section {
-                padding: 16px;
-                box-shadow: 3px 3px 0 #000;
-                border-radius: 14px;
-            }
-
-            .report-title {
-                font-size: 16px;
-            }
-
-            .report-section p {
-                font-size: 14px;
-                line-height: 1.6;
-            }
-
-            .modal-content {
-                padding: 24px 20px;
-                box-shadow: 6px 6px 0 #000;
-            }
-
-            .modal-content h2 {
-                font-size: 20px;
-            }
-
-            .modal-content p {
-                font-size: 15px;
-            }
+        .level-item.active { border-color: #c81623; background-color: #fff0f2; }
+        .level-item.active::after {
+            content: "";
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #c81623;
+        }
+        .start-btn {
+            display: block;
+            width: 100%;
+            height: 52px;
+            line-height: 52px;
+            text-align: center;
+            font-size: 18px;
+            color: #fff;
+            background: linear-gradient(90deg, #c81623, #ff7800);
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 3px 8px rgba(200,22,35,0.3);
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin: 20px 0;
+        }
+        .start-btn:active { transform: scale(0.98); }
+        .copyright { text-align: center; font-size: 13px; color: #777; margin-top: 50px; line-height: 1.8; }
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            background-color: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            display: none;
+            z-index: 999;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <!-- 首页 -->
-    <div id="page-home" class="page active">
-        <h1 class="home-title">业余乒乓球MBTI精准测试</h1>
-        <p class="home-subtitle">30道实战场景题，测出你的球风人格与提升路径</p>
-        <input type="number" id="score-input" placeholder="请输入你的开球网积分（如1500）">
-        <button class="btn-primary" id="start-test">开始30题测试</button>
-    </div>
+    <div class="wrap">
+        <h1>业余乒乓球人的MBTI风格测试</h1>
+        <p class="desc">5分钟，30道选择题，判断你的打球性格，给你专属涨球妙计</p>
 
-    <!-- 答题页 -->
-    <div id="page-answer" class="page">
-        <div class="progress-bar-wrap">
-            <div id="progress-bar"></div>
-        </div>
-        <span id="module-name-tag"></span>
-        <div id="question-container"></div>
-        <button class="btn-primary" id="next-btn">下一题</button>
-    </div>
-
-    <!-- 结果页 -->
-    <div id="page-result" class="page">
-        <div class="result-card">
-            <span id="mbti-code-text">ENTJ</span>
-            <span id="fun-title-text">强攻统帅</span>
-            <div id="person-img-box"></div>
-            <ul id="desc-list-box"></ul>
+        <div class="level-box">
+            <div class="level-item" data-level="low">1200-1499【入门进阶】</div>
+            <div class="level-item" data-level="mid">1500-1799【中坚力量】</div>
+            <div class="level-item" data-level="high">1800-2099【准高手】</div>
         </div>
 
-        <div id="confidence-block"></div>
-
-        <!-- 付费解锁入口 -->
-        <div class="pay-mask-tip">
-            <h3>解锁完整千字深度实战分析报告</h3>
-            <p>仅需9.9元，包含：短板拆解、分阶段训练方案、底板胶皮精准推荐、双打搭档适配</p>
-            <button class="btn-success" id="open-pay-modal">立即支付解锁完整干货</button>
-        </div>
-
-        <!-- 分享二维码区域 -->
-        <div class="qrcode-wrap">
-            <p style="color:#666;margin-bottom:10px;">扫码即可参与同款测试</p>
-            <div id="poster-qrcode"></div>
-        </div>
-
-        <!-- 付费后完整报告区域 -->
-        <div id="full-report-wrap">
-            <div id="full-report-content"></div>
-        </div>
-
-        <!-- 重新开始测试按钮（所有人可见，移出了隐藏区域） -->
-        <button class="btn-gray" id="restart-all-test" style="margin-top: 20px;">重新开始测试</button>
+        <button class="start-btn" id="startBtn">开始测试</button>
+        <div class="copyright">©️2026业余乒乓球人的MBTI风格测试版权所有，测试结果仅供参考</div>
     </div>
-</div>
 
-<!-- 支付弹窗 -->
-<div class="global-modal" id="pay-modal">
-    <div class="modal-content">
-        <h2>支付解锁完整实战报告</h2>
-        <p>订单金额：<strong>9.9 元</strong></p>
-        <p style="font-size:16px;color:#666;text-align:center;">支付后永久查看完整千字分析报告</p>
-        <button class="btn-success" id="submit-pay">确认发起支付</button>
-        <button class="btn-gray" id="close-pay-modal">取消</button>
-        <p style="font-size:13px;color:#999;text-align:center;margin-top:12px;">若有问题请致函 273816436@qq.com 咨询客服</p>
-    </div>
-</div>
+    <div class="toast" id="toast">哈喽，先选个水平再开始呗~</div>
 
-<!-- 支付成功弹窗 -->
-<div class="global-modal" id="pay-success-modal">
-    <div class="modal-content">
-        <h2 style="color:#00B42A;">支付成功！</h2>
-        <p>已解锁全部实战干货分析报告</p>
-        <button class="btn-primary" id="check-full-report">查看完整专业报告</button>
-    </div>
-</div>
+    <script>
+        let selectLevel = "";
+        const levelItems = document.querySelectorAll(".level-item");
+        const startBtn = document.getElementById("startBtn");
+        const toast = document.getElementById("toast");
 
-<script src="script.js"></script>
+        levelItems.forEach(item => {
+            item.addEventListener("click", function(){
+                levelItems.forEach(i => i.classList.remove("active"));
+                this.classList.add("active");
+                selectLevel = this.dataset.level;
+            });
+        });
+
+        startBtn.addEventListener("click", function(){
+            if(!selectLevel){
+                toast.style.display = "block";
+                setTimeout(()=> toast.style.display = "none", 2000);
+                return;
+            }
+            Storage.set("userLevel", selectLevel);
+            Storage.remove("answers");
+            Storage.remove("mbtiType");
+            Storage.remove("integrityScore");
+            Storage.remove("orderNo");
+            Storage.remove("isPay");
+            window.location.href = "/quiz.html";
+        });
+    </script>
 </body>
 </html>
