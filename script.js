@@ -1110,6 +1110,8 @@ nextBtn.addEventListener("click", () => {
         runConflictCheck();
         calcFinalPersonality();
         switchPage(pageResult);
+        // 新增：缓存测试结果，支付跳转刷新后不丢失
+        localStorage.setItem('pingpong_mbti_result', mbtiCodeText.innerText);
         setTimeout(generateShareQRCode, 100);
         // 新增：把测试结果存到本地，支付跳转刷新后不丢失
         localStorage.setItem('pingpong_mbti_result', mbtiCodeText.innerText);
@@ -1250,21 +1252,24 @@ submitPayBtn.addEventListener("click", async () => {
     }
 });
 
-// ====================== 支付成功解锁函数（后端验证通过后调用） ======================
+// ====================== 统一解锁完整报告 ======================
 function unlockFullReport() {
     localStorage.setItem("pingpong_mbti_unlocked", "1");
     isReportUnlocked = true;
-    paySuccessModal.classList.add("show");
+    
+    if (fullReportWrap) {
+        fullReportWrap.style.display = "block";
+        fullReportWrap.scrollIntoView({ behavior: "smooth" });
+    }
 }
 
-// 支付成功弹窗：查看完整报告
+// 支付成功弹窗：查看完整报告按钮
 checkFullReportBtn.addEventListener("click", () => {
     paySuccessModal.classList.remove("show");
-    fullReportWrap.style.display = "block";
-    fullReportWrap.scrollIntoView({ behavior: "smooth" });
+    unlockFullReport();
 });
 
-// ====================== 重新测试按钮 ======================
+// ====================== 重新测试按钮（同步清除所有缓存） ======================
 restartAllTestBtn.addEventListener("click", () => {
     currentQuestionIndex = 0;
     answerRecord = [];
@@ -1272,26 +1277,30 @@ restartAllTestBtn.addEventListener("click", () => {
     conflictCount = 0;
     scoreInput.value = "";
     fullReportWrap.style.display = "none";
+    localStorage.removeItem('pingpong_mbti_result');
+    localStorage.removeItem('pingpong_mbti_unlocked');
     switchPage(pageHome);
     window.scrollTo({ top: 0, behavior: "smooth" });
 });
-// ====================== 页面加载初始化：恢复测试结果 + 支付回调自动解锁 ======================
+
+// ====================== 页面加载初始化：恢复结果 + 支付自动解锁 ======================
 window.addEventListener("DOMContentLoaded", async () => {
     // 1. 恢复本地缓存的测试结果（支付跳转刷新后不丢失）
     const savedResult = localStorage.getItem('pingpong_mbti_result');
     if (savedResult && pingpongPersonMap[savedResult]) {
         restoreResultPage(savedResult);
         switchPage(pageResult);
+        
+        // 已经解锁过的，直接显示报告
+        if (isReportUnlocked) {
+            unlockFullReport();
+        }
     }
 
-    // 2. 检查本地是否已经永久解锁
-    if (isReportUnlocked) {
-        fullReportWrap.style.display = "block";
-    }
-
-    // 3. 检测URL里的订单号（支付成功跳转回来时自动查单解锁）
+    // 2. 检测URL里的订单号（支付成功跳转回来时自动查单解锁）
     const urlParams = new URLSearchParams(window.location.search);
     const orderNo = urlParams.get("order_no");
+    
     if (orderNo && !isReportUnlocked) {
         try {
             const res = await fetch("/api/check-order", {
@@ -1302,7 +1311,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const data = await res.json();
             
             if (data.code === 0 && data.paid) {
-                // 支付成功：永久解锁 + 显示报告 + 清除URL参数
+                // 支付成功：解锁报告 + 清除URL参数
                 unlockFullReport();
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -1337,7 +1346,7 @@ function restoreResultPage(personCode) {
     // 渲染完整千字报告
     fullReportContent.innerHTML = data.fullReport;
     
-    // 置信度展示
+    // 置信度默认95%
     confidenceBlock.innerHTML = `
         <strong>本次测试准确度：95%</strong><br>
         说明：作答一致性很高，测试结果与你的真实球风匹配度极佳
@@ -1345,13 +1354,4 @@ function restoreResultPage(personCode) {
     
     // 重新生成分享二维码
     setTimeout(generateShareQRCode, 100);
-}
-
-// 统一解锁完整报告
-function unlockFullReport() {
-    localStorage.setItem("pingpong_mbti_unlocked", "1");
-    isReportUnlocked = true;
-    fullReportWrap.style.display = "block";
-    // 自动滚动到报告位置
-    fullReportWrap.scrollIntoView({ behavior: "smooth" });
 }
