@@ -3,394 +3,506 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>业余乒乓实战MBTI精准测试</title>
-    <!-- 外部CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <title>业余乒乓球MBTI精准测试</title>
+    <!-- 二维码生成库，修复QRCode报错 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
         }
-        html, body {
-            font-family: "Microsoft YaHei", system-ui, sans-serif;
-            /* 乒乓球主题浅背景：淡色底+模拟乒乓球纹理 */
-            background-color: #f0f5ff;
-            background-image: 
-                radial-gradient(circle at 20% 30%, rgba(22, 93, 255, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 80% 70%, rgba(255, 125, 0, 0.05) 0%, transparent 40%);
-            font-size: 18px;
-            line-height: 1.85;
-            padding: 16px;
+
+        body {
+            background: #f5f7fa;
+            color: #111;
+            line-height: 1.6;
         }
+
         .container {
-            max-width: 820px;
+            max-width: 600px;
             margin: 0 auto;
-            background: #ffffff;
-            padding: 36px 32px;
-            border-radius: 24px;
-            box-shadow: 0 8px 32px rgba(22, 93, 255, 0.1);
+            padding: 24px;
+            min-height: 100vh;
         }
-        h1 {
-            font-size: 36px;
-            text-align: center;
-            color: #165DFF;
-            margin-bottom: 12px;
-        }
-        .home-subtitle {
-            text-align: center;
-            color: #666;
-            font-size: 20px;
-            margin-bottom: 40px;
-        }
-        h2 {
-            font-size: 28px;
-            margin: 20px 0 18px;
-            color: #222;
-        }
-        h3 {
-            font-size: 24px;
-            margin: 20px 0 12px;
-        }
-        p, label {
-            font-size: 21px;
-            margin: 14px 0;
-            color: #333;
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 18px 22px;
-            font-size: 23px;
-            border: 3px solid #DCDFE6;
-            border-radius: 14px;
-            margin: 12px 0 28px;
-        }
-        button {
-            width: 100%;
-            padding: 20px 0;
-            font-size: 23px;
-            font-weight: bold;
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            margin: 14px 0;
-            transition: all 0.2s;
-        }
-        button:active {
-            opacity: 0.85;
-            transform: scale(0.98);
-        }
-        .btn-primary {
-            background-color: #165DFF;
-            color: #fff;
-        }
-        .btn-success {
-            background-color: #00B42A;
-            color: #fff;
-        }
-        .btn-warning {
-            background-color: #FF7D00;
-            color: #fff;
-        }
-        .btn-gray {
-            background-color: #86909C;
-            color: #fff;
-        }
-        /* 分页控制 */
+
         .page {
             display: none;
         }
         .page.active {
             display: block;
         }
-        /* 答题选项样式 */
-        .answer-option {
-            display: block;
-            padding: 16px 20px;
-            border: 3px solid #E5E6EB;
-            border-radius: 14px;
-            margin: 14px 0;
-            cursor: pointer;
-            transition: all 0.2s;
+
+        /* ========== 首页样式 ========== */
+        .home-title {
+            font-size: 32px;
+            font-weight: 900;
+            text-align: center;
+            line-height: 1.2;
+            margin-bottom: 16px;
         }
-        .answer-option:hover {
-            border-color: #165DFF;
-            background: #F0F7FF;
+
+        .home-subtitle {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 32px;
         }
-        .answer-option input {
-            width: 24px;
-            height: 24px;
-            margin-right: 14px;
-            vertical-align: middle;
-        }
-        .answer-option:has(input:checked) {
-            border-color: #165DFF;
-            background-color: #F0F7FF;
-        }
-        /* 进度条+模组标注 */
-        .progress-wrap {
+
+        #score-input {
             width: 100%;
-            height: 24px;
-            border: 2px solid #DCDFE6;
-            border-radius: 14px;
-            overflow: hidden;
-            margin: 12px 0;
+            padding: 16px 20px;
+            font-size: 18px;
+            border: 3px solid #000;
+            border-radius: 16px;
+            box-shadow: 4px 4px 0 #000;
+            outline: none;
+            margin-bottom: 24px;
+            background: #fff;
         }
-        .progress-inner {
+
+        /* ========== 通用按钮样式 ========== */
+        .btn-success, .btn-gray, .btn-primary {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            border: 3px solid #000;
+            border-radius: 16px;
+            box-shadow: 4px 4px 0 #000;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            margin-bottom: 16px;
+        }
+
+        .btn-success:active, .btn-gray:active, .btn-primary:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        .btn-success {
+            background: #00c853;
+            color: #fff;
+        }
+
+        .btn-gray {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-primary {
+            background: #ff3b30;
+            color: #fff;
+        }
+
+        /* ========== 答题页样式 ========== */
+        .progress-bar-wrap {
+            width: 100%;
+            height: 12px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
             height: 100%;
-            background-color: #165DFF;
+            background: #2979ff;
             width: 0%;
             transition: width 0.3s ease;
         }
-        .module-tag {
+
+        #module-name-tag {
             display: inline-block;
             padding: 6px 16px;
-            background: #E8F3FF;
-            color: #165DFF;
-            border-radius: 10px;
-            font-size: 19px;
-            margin-bottom: 16px;
-            font-weight: bold;
-        }
-
-        /* ========== 结果页样式优化 ========== */
-        .result-card {
-            padding: 30px 24px;
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 2px solid #1565c0;
             border-radius: 20px;
-            background: linear-gradient(135deg, #f0f7ff 0%, #fff7ed 100%);
-            margin: 24px 0;
-            text-align: center;
-        }
-        .mbti-code {
-            font-size: 56px;
-            font-weight: 900;
-            color: #165DFF;
-            letter-spacing: 8px;
-            margin-bottom: 16px;
-        }
-        .person-img-placeholder {
-            width: 100%;
-            max-width: 280px;
-            height: 200px;
-            margin: 0 auto 20px;
-            background: #eef2f7;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 18px;
-        }
-        .person-img-placeholder img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 16px;
-        }
-        .fun-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #FF7D00;
+            font-size: 14px;
+            font-weight: 600;
             margin-bottom: 20px;
         }
-        .desc-list {
-            list-style: none;
-            text-align: left;
-            padding: 0;
+
+        #question-container p {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 28px;
         }
-        .desc-list li {
-            font-size: 20px;
-            padding: 8px 0;
-            border-bottom: 1px dashed #e5e6eb;
-        }
-        .desc-list li:last-child {
-            border-bottom: none;
-        }
-        .confidence-tip {
-            margin: 20px 0;
-            padding: 14px 18px;
-            background: #FFFBEB;
-            border-radius: 12px;
-            font-size: 19px;
-            text-align: left;
-        }
-        .qrcode-wrap {
-            text-align: center;
-            margin-top: 24px;
-            padding: 20px;
+
+        .answer-option {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            margin-bottom: 14px;
             background: #fff;
+            border: 3px solid #000;
             border-radius: 16px;
+            box-shadow: 4px 4px 0 #000;
+            cursor: pointer;
+            font-size: 17px;
+            transition: all 0.1s ease;
         }
-        .qrcode-wrap p {
-            margin-bottom: 12px;
-            font-size: 19px;
-            color: #666;
+
+        .answer-option:hover {
+            background: #f0f7ff;
         }
-        .screenshot-tip {
-            text-align: center;
-            color: #86909C;
-            font-size: 18px;
+
+        .answer-option input {
+            margin-right: 12px;
+            transform: scale(1.2);
+            vertical-align: middle;
+        }
+
+        .answer-option:has(input:checked) {
+            background: #e3f2fd;
+            border-color: #1565c0;
+        }
+
+        #next-btn {
             margin-top: 10px;
         }
 
-        /* 付费提示区域 */
+        /* ========== 结果页样式 ========== */
+        .result-card {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 20px;
+            box-shadow: 6px 6px 0 #000;
+            padding: 28px 24px;
+            margin-bottom: 20px;
+        }
+
+        #mbti-code-text {
+            font-size: 48px;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: 4px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        #fun-title-text {
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            color: #d32f2f;
+            display: block;
+            margin-bottom: 24px;
+        }
+
+        #desc-list-box {
+            list-style: none;
+            padding: 0;
+        }
+
+        #desc-list-box li {
+            padding: 10px 0;
+            border-bottom: 1px dashed #ddd;
+            font-size: 16px;
+        }
+
+        #desc-list-box li:last-child {
+            border-bottom: none;
+        }
+
+        #confidence-block {
+            background: #fff8e1;
+            border: 2px solid #ff8f00;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
         .pay-mask-tip {
-            margin: 30px 0 10px;
-            padding: 28px 20px;
-            background: linear-gradient(135deg, #fff7ed 0%, #ffe7cc 100%);
+            background: #fff;
+            border: 3px solid #000;
             border-radius: 16px;
+            box-shadow: 4px 4px 0 #000;
+            padding: 20px;
+            margin: 20px 0;
             text-align: center;
         }
+
         .pay-mask-tip h3 {
-            color: #E65100;
+            font-size: 20px;
             margin-bottom: 10px;
         }
 
-        /* ========== 完整报告排版优化 ========== */
-        .full-report-box {
-            margin-top: 20px;
-            padding: 24px;
-            border-radius: 16px;
-            background: #fafbfc;
-            display: none;
+        .pay-mask-tip p {
+            color: #666;
+            margin-bottom: 16px;
+            font-size: 15px;
         }
-        .report-section {
-            padding: 18px 20px;
-            border-radius: 12px;
-            margin-bottom: 18px;
-        }
-        .report-section.blue {
-            background: #f0f7ff;
-        }
-        .report-section.orange {
-            background: #fff7ed;
-        }
-        .report-section.green {
-            background: #f0fff4;
-        }
-        .report-section.purple {
-            background: #faf0ff;
-        }
-        .report-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #222;
-            margin-bottom: 10px;
-            display: block;
-        }
-        .report-section p {
-            font-size: 19px;
-            margin: 8px 0;
-            color: #333;
-        }
-        .anti-intuition {
-            padding: 18px;
-            background: #FFF2CC;
-            border-radius: 12px;
+
+        .qrcode-wrap {
+            text-align: center;
             margin: 20px 0;
         }
-        .anti-intuition strong {
-            color: #B7791F;
-            font-size: 20px;
+
+        /* ========== 完整报告样式 ========== */
+        #full-report-wrap {
+            display: none;
+            margin-top: 20px;
         }
 
-        /* 全局弹窗遮罩 */
+        .report-section {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 16px;
+            box-shadow: 4px 4px 0 #000;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .report-title {
+            display: block;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1565c0;
+        }
+
+        .report-section p {
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .report-section.blue { border-left: 8px solid #2979ff; }
+        .report-section.orange { border-left: 8px solid #ff9800; }
+        .report-section.green { border-left: 8px solid #4caf50; }
+        .report-section.purple { border-left: 8px solid #9c27b0; }
+
+        .anti-intuition {
+            background: #fce4ec;
+            border: 3px solid #c2185b;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 4px 4px 0 #c2185b;
+        }
+
+        .anti-intuition strong {
+            display: block;
+            font-size: 16px;
+            color: #c2185b;
+            margin-bottom: 8px;
+        }
+
+        /* ========== 弹窗样式 ========== */
         .global-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.65);
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
+            padding: 20px;
         }
+
         .global-modal.show {
             display: flex;
         }
+
         .modal-content {
-            width: 90%;
-            max-width: 540px;
             background: #fff;
-            padding: 34px;
+            border: 3px solid #000;
             border-radius: 20px;
+            box-shadow: 8px 8px 0 #000;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .modal-content h2 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* ========== 移动端适配 ========== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .home-title {
+                font-size: 24px;
+            }
+
+            .home-subtitle {
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+
+            #score-input {
+                padding: 14px 16px;
+                font-size: 16px;
+                box-shadow: 3px 3px 0 #000;
+            }
+
+            .btn-success, .btn-gray, .btn-primary {
+                padding: 14px;
+                font-size: 16px;
+                box-shadow: 3px 3px 0 #000;
+                margin-bottom: 12px;
+            }
+
+            .progress-bar-wrap {
+                height: 10px;
+                margin-bottom: 18px;
+            }
+
+            #module-name-tag {
+                font-size: 13px;
+                padding: 5px 12px;
+                margin-bottom: 16px;
+            }
+
+            #question-container p {
+                font-size: 18px;
+                margin-bottom: 20px;
+            }
+
+            .answer-option {
+                padding: 12px 16px;
+                font-size: 15px;
+                margin-bottom: 12px;
+                box-shadow: 3px 3px 0 #000;
+            }
+
+            .result-card {
+                padding: 20px 16px;
+                box-shadow: 4px 4px 0 #000;
+                border-radius: 16px;
+            }
+
+            #mbti-code-text {
+                font-size: 36px;
+                letter-spacing: 2px;
+            }
+
+            #fun-title-text {
+                font-size: 18px;
+                margin-bottom: 16px;
+            }
+
+            #desc-list-box li {
+                font-size: 14px;
+                padding: 8px 0;
+            }
+
+            #confidence-block {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .report-section {
+                padding: 16px;
+                box-shadow: 3px 3px 0 #000;
+                border-radius: 14px;
+            }
+
+            .report-title {
+                font-size: 16px;
+            }
+
+            .report-section p {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .modal-content {
+                padding: 24px 20px;
+                box-shadow: 6px 6px 0 #000;
+            }
+
+            .modal-content h2 {
+                font-size: 20px;
+            }
+
+            .modal-content p {
+                font-size: 15px;
+            }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body>
 <div class="container">
-    <!-- 页面1：首页录入积分 -->
+    <!-- 首页 -->
     <div id="page-home" class="page active">
-        <h1>乒乓实战MBTI性格测试</h1>
-        <p class="home-subtitle">30道真实打球情景题 · 算法防乱选校验 · 精准匹配你的专属球风</p>
-        
-        <label>请填写你的开球网积分：</label>
-        <input type="number" id="score-input" placeholder="例：1520">
-        <button class="btn-primary" id="start-test">开始答题测试</button>
+        <h1 class="home-title">业余乒乓球MBTI精准测试</h1>
+        <p class="home-subtitle">30道实战场景题，测出你的球风人格与提升路径</p>
+        <input type="number" id="score-input" placeholder="请输入你的开球网积分（如1500）">
+        <button class="btn-primary" id="start-test">开始30题测试</button>
     </div>
 
-    <!-- 页面2：逐题答题页 -->
+    <!-- 答题页 -->
     <div id="page-answer" class="page">
-        <h2>正在作答</h2>
-        <div class="progress-wrap">
-            <div class="progress-inner" id="progress-bar"></div>
+        <div class="progress-bar-wrap">
+            <div id="progress-bar"></div>
         </div>
-        <span id="module-name-tag" class="module-tag"></span>
+        <span id="module-name-tag"></span>
         <div id="question-container"></div>
         <button class="btn-primary" id="next-btn">下一题</button>
     </div>
 
-    <!-- 页面3：结果海报页 -->
+    <!-- 结果页 -->
     <div id="page-result" class="page">
         <div class="result-card">
-            <!-- MBTI四字母大字号 -->
-            <div class="mbti-code" id="mbti-code-text">ENTJ</div>
-            
-            <!-- 图片占位区：后续替换src即可 -->
-            <div class="person-img-placeholder" id="person-img-box">
-                人格示意图占位
-            </div>
-            
-            <!-- 短趣味称号 -->
-            <div class="fun-title" id="fun-title-text">强攻统帅</div>
-            
-            <!-- 三要点自动分行 -->
-            <ul class="desc-list" id="desc-list-box"></ul>
+            <span id="mbti-code-text">ENTJ</span>
+            <span id="fun-title-text">强攻统帅</span>
+            <div id="person-img-box"></div>
+            <ul id="desc-list-box"></ul>
         </div>
 
-        <!-- 置信度提示 -->
-        <div id="confidence-block" class="confidence-tip"></div>
-
-        <!-- 二维码+截图提示 -->
-        <div class="qrcode-wrap">
-            <p>扫码即可参与同款测试</p>
-            <div id="poster-qrcode"></div>
-            <p class="screenshot-tip">长按页面截图，即可分享给球友</p>
-        </div>
+        <div id="confidence-block"></div>
 
         <!-- 付费解锁入口 -->
         <div class="pay-mask-tip">
             <h3>解锁完整千字深度实战分析报告</h3>
-            <p>仅需9.9元，包含：短板拆解、分阶段训练方案、定型打法、底板胶皮器材精准推荐、双打搭档适配</p>
+            <p>仅需9.9元，包含：短板拆解、分阶段训练方案、底板胶皮精准推荐、双打搭档适配</p>
             <button class="btn-success" id="open-pay-modal">立即支付解锁完整干货</button>
         </div>
 
-        <!-- 付费后完整报告区域 -->
-        <div class="full-report-box" id="full-report-wrap">
-            <div id="full-report-content"></div>
+        <!-- 分享二维码区域 -->
+        <div class="qrcode-wrap">
+            <p style="color:#666;margin-bottom:10px;">扫码即可参与同款测试</p>
+            <div id="poster-qrcode"></div>
         </div>
 
-        <button class="btn-gray" id="restart-all-test">重新开始测试</button>
+        <!-- 付费后完整报告区域 -->
+        <div id="full-report-wrap">
+            <div id="full-report-content"></div>
+            <button class="btn-gray" id="restart-all-test">重新开始测试</button>
+        </div>
     </div>
 </div>
 
 <!-- 支付弹窗 -->
 <div class="global-modal" id="pay-modal">
     <div class="modal-content">
-        <h2 style="text-align:center">支付解锁完整实战报告</h2>
-        <p style="text-align:center;margin:20px 0;">订单金额：<strong>9.9 元</strong></p>
-        <p style="font-size:18px;color:#666;text-align:center;">支付后永久查看完整千字分析报告</p>
+        <h2>支付解锁完整实战报告</h2>
+        <p>订单金额：<strong>9.9 元</strong></p>
+        <p style="font-size:16px;color:#666;text-align:center;">支付后永久查看完整千字分析报告</p>
         <button class="btn-success" id="submit-pay">确认发起支付</button>
         <button class="btn-gray" id="close-pay-modal">取消</button>
     </div>
@@ -399,8 +511,8 @@
 <!-- 支付成功弹窗 -->
 <div class="global-modal" id="pay-success-modal">
     <div class="modal-content">
-        <h2 style="text-align:center;color:#00B42A">支付成功！</h2>
-        <p style="text-align:center;margin:24px 0;">已解锁全部实战干货分析报告</p>
+        <h2 style="color:#00B42A;">支付成功！</h2>
+        <p>已解锁全部实战干货分析报告</p>
         <button class="btn-primary" id="check-full-report">查看完整专业报告</button>
     </div>
 </div>

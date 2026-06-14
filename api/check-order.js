@@ -26,6 +26,7 @@ module.exports = async function handler(req, res) {
         nonce_str: nonce_str
     };
 
+    // 签名算法和下单完全一致
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {

@@ -2,7 +2,7 @@
 const PAY_CONFIG = {
     APPID: "201906181673", // 替换为你的虎皮椒商户APPID
     GOODS_NAME: "乒乓MBTI完整千字实战分析报告",
-    PRICE: "0.90",
+    PRICE: "9.90",
     // 支付成功后跳转回的页面地址，部署后替换成你的正式域名
     RETURN_URL: window.location.href.split('?')[0]
 };
@@ -1306,3 +1306,87 @@ window.addEventListener("DOMContentLoaded", async () => {
         fullReportWrap.style.display = "block";
     }
 });
+
+// ========== 支付状态自动检测 + 永久缓存 ==========
+window.addEventListener('load', function() {
+    // 第一步：先查本地缓存，付过钱直接解锁，不用重复查接口
+    const isPaid = localStorage.getItem('pingpong_mbti_paid');
+    if (isPaid === '1') {
+        showFullReport();
+        return;
+    }
+
+    // 第二步：查网址里的订单号（刚支付完跳转回来时触发）
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlOrderNo = urlParams.get('order_no');
+    if (urlOrderNo) {
+        checkOrderStatus(urlOrderNo);
+    }
+});
+
+// 查询订单支付状态
+function checkOrderStatus(orderNo) {
+    fetch('/api/check-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_no: orderNo })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.code === 0 && data.paid) {
+            // 支付成功：存本地永久缓存 + 显示完整报告
+            localStorage.setItem('pingpong_mbti_paid', '1');
+            showFullReport();
+        }
+    })
+    .catch(() => {});
+}
+
+// 显示完整报告、隐藏支付弹窗
+function showFullReport() {
+    // ===== 把下面两个id改成你页面里真实的元素id =====
+    document.getElementById('pay-modal').style.display = 'none';    // 隐藏支付弹窗
+    document.getElementById('full-report').style.display = 'block'; // 显示完整报告
+}
+// ========== 支付状态自动检测 + 永久缓存（关掉页面再开依然有效） ==========
+window.addEventListener('load', function() {
+    // 第一步：优先查本地缓存，付过钱直接解锁，不用重复请求接口
+    const isPaid = localStorage.getItem('pingpong_mbti_paid');
+    if (isPaid === '1') {
+        unlockFullReport();
+        return;
+    }
+
+    // 第二步：检测网址里的订单号（支付成功跳转回来时自动触发）
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlOrderNo = urlParams.get('order_no');
+    if (urlOrderNo) {
+        checkOrderAndUnlock(urlOrderNo);
+    }
+});
+
+// 调用接口查订单，支付成功就永久解锁
+function checkOrderAndUnlock(orderNo) {
+    fetch('/api/check-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_no: orderNo })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.code === 0 && data.paid) {
+            // 存入本地永久缓存，浏览器关掉重开也有效
+            localStorage.setItem('pingpong_mbti_paid', '1');
+            unlockFullReport();
+        }
+    })
+    .catch(() => {});
+}
+
+// 解锁完整报告：隐藏支付弹窗、显示完整报告内容
+function unlockFullReport() {
+    // 隐藏支付弹窗
+    document.getElementById('pay-modal').style.display = 'none';
+    // 显示完整报告区域
+    document.getElementById('full-report-wrap').style.display = 'block';
+}

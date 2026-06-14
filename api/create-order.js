@@ -29,10 +29,10 @@ module.exports = async function handler(req, res) {
         time: time,
         nonce_str: nonce_str,
         notify_url: `${protocol}://${domain}/api/notify`,
-        return_url: `${protocol}://${domain}`
+        return_url: `${protocol}://${domain}?order_no=${order_no}`
     };
 
-    // 官方标准签名
+    // 官方标准签名算法
     const keys = Object.keys(params).sort();
     let signStr = '';
     keys.forEach(key => {
@@ -64,7 +64,7 @@ module.exports = async function handler(req, res) {
             return res.json({ code: -99, msg: `接口非JSON返回：${raw}` });
         }
 
-        // V3接口 errcode=0 代表成功，支付链接是 url
+        // V3接口 errcode=0 代表成功
         if (ret.errcode === 0 && ret.url) {
             return res.json({
                 code: 0,
